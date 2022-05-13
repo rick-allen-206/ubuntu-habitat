@@ -1,0 +1,485 @@
+---
+version: "3.3"
+services:
+
+  ##########################################
+  ###          MEDIA SERVICES
+  ##########################################
+  plex:
+    image: linuxserver/plex:latest
+    container_name: plex
+    networks:
+      - traefik
+    ports:
+      - 32400:32400
+      # - 1900:1900
+      # - 3005:3005
+      # - 5353:5353
+      # - 8324:8324
+      # - 32410:32410
+      # - 32412:32412
+      # - 32413:32413
+      # - 32414:32414
+      # - 32469:32469
+    environment:
+      PUID: 0
+      PGID: 0
+      VERSION: docker
+      PLEX_CLAIM: ${plex_claim_sec}
+      TZ: America/Boise
+    volumes:
+      - ./components/data/plex:/config
+      - /media/tv/:/tv
+      - /media/movies:/movies
+      - /media/anime:/anime
+      - /media/anime_movies:/anime_movies
+    restart: unless-stopped
+
+  tautulli:
+      image: lscr.io/linuxserver/tautulli
+      container_name: tautulli
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.tautulli.tls=true
+        - traefik.http.routers.tautulli.rule=HOST(`tautulli.${domain}`)
+        - traefik.http.routers.tautulli.tls.certresolver=cfresolver
+        - traefik.http.services.tautulli.loadbalancer.server.port=8181
+      networks:
+        - traefik
+      environment:
+        # - PUID=1000
+        # - PGID=1000
+        - TZ=America/Boise
+      volumes:
+        - ./components/data/tautulli:/config
+      restart: unless-stopped
+
+  radarr:
+    image: lscr.io/linuxserver/radarr
+    container_name: radarr
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.radarr.tls=true
+      - traefik.http.routers.radarr.rule=HOST(`radarr.${domain}`)
+      - traefik.http.routers.radarr.tls.certresolver=cfresolver
+      - traefik.http.services.radarr.loadbalancer.server.port=7878
+    networks:
+      - traefik
+    environment:
+      PUID: 0
+      PGID: 0
+      TZ: America/Boise
+    volumes:
+      - /media/movies:/movies
+      - /media/anime_movies:/anime_movies
+      - /media/downloads:/data/completed
+      - ./components/data/radarr/config:/config
+    restart: unless-stopped
+
+  sonarr:
+    image: lscr.io/linuxserver/sonarr
+    container_name: sonarr
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.sonarr.tls=true
+      - traefik.http.routers.sonarr.rule=HOST(`sonarr.${domain}`)
+      - traefik.http.routers.sonarr.tls.certresolver=cfresolver
+      - traefik.http.services.sonarr.loadbalancer.server.port=8989
+    networks:
+      - traefik
+    environment:
+      PUID: 0
+      PGID: 0
+      TZ: America/Boise
+    volumes:
+      - /media/tv:/tv
+      - /media/anime:/anime
+      - /media/downloads:/data/completed
+      - ./components/data/sonarr/config:/config
+    restart: unless-stopped
+
+  jackett:
+    image: lscr.io/linuxserver/jackett
+    container_name: jackett
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.jackett.tls=true
+      - traefik.http.routers.jackett.rule=HOST(`jackett.${domain}`)
+      - traefik.http.routers.jackett.tls.certresolver=cfresolver
+      - traefik.http.services.jackett.loadbalancer.server.port=9117
+    networks:
+      - traefik
+    environment:
+      PUID: 0
+      PGID: 0
+      TZ: America/Boise
+      AUTO_UPDATE: 'true' #optional
+      # - RUN_OPTS=<run options here> #optional
+    volumes:
+      - /media/downloads:/downloads
+      - ./components/data/jackett/config:/config
+    restart: unless-stopped
+
+  transmission:
+    image: haugene/transmission-openvpn
+    container_name: transmission
+    # labels:
+    #   - traefik.enable=true
+    #   - traefik.http.routers.transmission.tls=true
+    #   - traefik.http.routers.transmission.rule=HOST(`transmission.${domain}`)
+    #   - traefik.http.services.transmission.loadbalancer.server.port=9091
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+    cap_add:
+      - NET_ADMIN
+    networks:
+      - traefik
+    ports:
+      - '9091:9091'
+    environment:
+      OPENVPN_PROVIDER: EXPRESSVPN
+      OPENVPN_CONFIG: ${openvpn_config}
+      OPENVPN_USERNAME: ${openvpn_username_sec}
+      OPENVPN_PASSWORD: ${openvpn_password_sec}
+      LOCAL_NETWORK: ${openvpn_local_network}
+    volumes:
+      - /media/downloads:/data/completed
+      - ./components/data/transmission:/data
+    restart: unless-stopped
+
+  ombi:
+    image: linuxserver/ombi:latest
+    container_name: ombi
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.ombi.tls=true
+      - traefik.http.routers.ombi.rule=HOST(`ombi.${domain}`)
+      - traefik.http.routers.ombi.tls.certresolver=cfresolver
+      - traefik.http.services.ombi.loadbalancer.server.port=3579
+    networks:
+      - traefik
+    environment:
+      PUID: 0
+      PGID: 0
+      TZ: America/Boise
+      BASE_URL: '/ombi' #optional
+    volumes:
+      - ./components/data/ombi/config:/config
+    restart: unless-stopped
+
+  ptero-database:
+    image: mariadb:10.5
+    container_name: ptero-database
+    command: --default-authentication-plugin=mysql_native_password
+    networks:
+      - traefik
+    environment:
+      MYSQL_ROOT_PASSWORD: ${ptero_database_root}
+      MYSQL_DATABASE: panel
+      MYSQL_USER: pterodactyl
+      MYSQL_PASSWORD: ${ptero_database_password}
+    volumes:
+      - "./components/data/pterodactyl/database:/var/lib/mysql"
+    restart: always
+  
+  ptero-cache:
+    image: redis:alpine
+    container_name: ptero-cache
+    networks:
+      - traefik
+    restart: always
+  
+  ptero-panel:
+    image: ghcr.io/pterodactyl/panel:latest
+    container_name: ptero-panel
+    labels:
+      - traefik.enable=true
+      - traefik.tcp.routers.ptero-panel.rule=HostSNI(`ptero-panel.${domain}`)
+      - traefik.tcp.routers.ptero-panel.tls.passthrough=true
+      - traefik.tcp.routers.ptero-panel.service=ptero-panel
+      - traefik.tcp.services.ptero-panel.loadbalancer.server.port=443
+      - traefik.tcp.routers.ptero-panel.entrypoints=websecure
+    # ports:
+    #   - 443:443
+    networks:
+      - traefik
+    environment:
+      APP_URL: "https://ptero-panel.${domain}"
+      APP_TIMEZONE: "America/Boise"
+      APP_SERVICE_AUTHOR: "${email}"
+      MAIL_FROM: "${email}"
+      MAIL_DRIVER: "smtp"
+      MAIL_HOST: "smtp.gmail.com"
+      MAIL_PORT: "587"
+      MAIL_USERNAME: ${ptero_panel_mail_username}
+      MAIL_PASSWORD: ${ptero_panel_mail_password}
+      MAIL_ENCRYPTION: "true"
+      # Uncomment the line below and set to a non-empty value if you want to use Let's Encrypt
+      # to generate an SSL certificate for the Panel.
+      LE_EMAIL: "${email}"
+      DB_PASSWORD: ${ptero_database_password}
+      APP_ENV: "production"
+      APP_ENVIRONMENT_ONLY: "false"
+      CACHE_DRIVER: "redis"
+      SESSION_DRIVER: "redis"
+      QUEUE_DRIVER: "redis"
+      REDIS_HOST: ptero-cache
+      DB_HOST: ptero-database
+      DB_PORT: "3306"
+    volumes:
+      - "./components/config/pterodactyl/var/:/app/var/"
+      - "./components/config/pterodactyl/nginx/:/etc/nginx/http.d/"
+      - "./components/data/certbot/letsencrypt/:/etc/letsencrypt/"
+      - "./components/data/pterodactyl/logs/:/app/storage/logs"
+    restart: always
+  
+  ##########################################
+  ###      INFRASTRUCTURE SERVICES
+  ##########################################
+
+  cloudflare-ddns-root:
+    image: oznu/cloudflare-ddns:latest
+    container_name: cloudflare-ddns-root
+    restart: always
+    environment:
+      - API_KEY=${cf_dns_api_token}
+      - ZONE=${domain}
+      - PROXIED=false
+  cloudflare-ddns-www:
+    image: oznu/cloudflare-ddns:latest
+    container_name: cloudflare-ddns-www
+    restart: always
+    environment:
+      - API_KEY=${cf_dns_api_token}
+      - ZONE=${domain}
+      - SUBDOMAIN=www
+      - PROXIED=false
+  cloudflare-ddns-pteropanel:
+      image: oznu/cloudflare-ddns:latest
+      container_name: cloudflare-ddns-pteropanel
+      restart: always
+      environment:
+        - API_KEY=${cf_dns_api_token}
+        - ZONE=${domain}
+        - SUBDOMAIN=ptero-panel
+        - PROXIED=false
+  
+  cloudflare-ddns-pteronode:
+      image: oznu/cloudflare-ddns:latest
+      container_name: cloudflare-ddns-pteronode
+      restart: always
+      environment:
+        - API_KEY=${cf_dns_api_token}
+        - ZONE=${domain}
+        - SUBDOMAIN=ombi
+        - SUBDOMAIN=ptero-node-1
+        - PROXIED=false
+  
+  cloudflare-ddns-ombi:
+      image: oznu/cloudflare-ddns:latest
+      container_name: cloudflare-ddns-ombi
+      restart: always
+      environment:
+        - API_KEY=${cf_dns_api_token}
+        - ZONE=${domain}
+        - SUBDOMAIN=ombi
+        - PROXIED=true
+
+  heimdall:
+    image: lscr.io/linuxserver/heimdall
+    container_name: heimdall
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.heimdall.tls=true
+      - traefik.http.routers.heimdall.tls.certresolver=cfresolver
+      - traefik.http.routers.heimdall.rule=HOST(`heimdall.${domain}`)
+      - traefik.http.routers.heimdall.service=heimdall
+      - traefik.http.services.heimdall.loadbalancer.server.port=80
+    networks:
+      - traefik
+    environment:
+      PUID: 1000
+      PGID: 1000
+      TZ: America/Boise
+    volumes:
+      - ./components/data/heimdall/config:/config
+    restart: unless-stopped
+
+  glances:
+    image: nicolargo/glances:latest-full
+    container_name: glances
+    labels:
+      - traefik.enable=true
+
+      - traefik.http.routers.glances-web.tls=true
+      - traefik.http.routers.glances-web.rule=HOST(`glances.${domain}`)
+      - traefik.http.routers.glances-web.service=glances-web
+      - traefik.http.routers.glances-web.tls.certresolver=cfresolver
+      - traefik.http.services.glances-web.loadbalancer.server.port=61208
+
+      - traefik.http.routers.glances-api.tls=true
+      - traefik.http.routers.glances-api.rule=HOST(`glances-api.${domain}`)
+      - traefik.http.routers.glances-api.service=glances-api
+      - traefik.http.routers.glances-api.tls.certresolver=cfresolver
+      - traefik.http.services.glances-api.loadbalancer.server.port=61209
+    networks:
+      - traefik
+    environment:
+      - 'GLANCES_OPT=--export influxdb2 -q'
+    pid: host
+    volumes:
+      - ./components/config/glances:/etc/glances
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+
+  diun:
+    image: crazymax/diun:latest
+    container_name: diun
+    command: serve
+    labels:
+      - diun.enable=true
+      - diun.watch_repo=true
+    networks:
+      - traefik
+    environment:
+      LOG_LEVEL: info
+      LOG_JSON: 'false'
+      DIUN_WATCH_WORKERS: 20
+      DIUN_WATCH_SCHEDULE: 0 */6 * * *
+      DIUN_PROVIDERS_DOCKER: 'true'
+      DIUN_NOTIF_DISCORD_WEBHOOKURL: ${diun_discord_webhook}
+      DIUN_NOTIF_DISCORD_MENTIONS: ${diun_discord_mentions}
+      DIUN_NOTIF_DISCORD_RENDERFIELDS: 'true'
+      DIUN_NOTIF_DISCORD_TIMEOUT: 10s
+      DIUN_NOTIF_DISCORD_TEMPLATEBODY: |
+          Docker tag {{ if .Entry.Image.HubLink }}[**{{ .Entry.Image }}**]({{ .Entry.Image.HubLink }}){{ else }}**{{ .Entry.Image }}**{{ end }} 
+          which you subscribed to through {{ .Entry.Provider }} provider {{ if (eq .Entry.Status "new") }}is available{{ else }}
+          has been updated{{ end }} on {{ .Entry.Image.Domain }} registry (triggered by {{ .Meta.Hostname }} host).
+      TZ: America/Boise
+    volumes:
+      - ./components/data/diun:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+
+  influxdb:
+    image: influxdb:latest
+    container_name: influxdb
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.influxdb.tls=true
+      - traefik.http.routers.influxdb.rule=HOST(`influxdb.${domain}`)
+      - traefik.http.routers.influxdb.tls.certresolver=cfresolver
+      - traefik.http.services.influxdb.loadbalancer.server.port=8086
+    networks:
+      - traefik
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: ${influxdb_username_sec}
+      DOCKER_INFLUXDB_INIT_PASSWORD: ${influxdb_password_sec}
+      DOCKER_INFLUXDB_INIT_ORG: TheBasement
+      DOCKER_INFLUXDB_INIT_BUCKET: default
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${influxdb_admintoken_sec}
+    volumes:
+      - ./components/data/influxdb2/config:/etc/influxdb2
+      - ./components/data/influxdb2:/var/lib/influxdb2
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.grafana.tls=true
+      - traefik.http.routers.grafana.rule=HOST(`grafana.${domain}`)
+      - traefik.http.routers.grafana.tls.certresolver=cfresolver
+      - traefik.http.services.grafana.loadbalancer.server.port=3000
+    networks:
+      - traefik
+    user: '0'
+    volumes:
+      - ./components/data/grafana:/var/lib/grafana
+    restart: unless-stopped
+
+  traefik:
+    image: traefik:latest
+    container_name: traefik
+    environment:
+      TRAEFIK_API: 'true'
+      TRAEFIK_API_INSECURE: 'true'
+      TRAEFIK_API_DASHBOARD: 'true'
+      TRAEFIK_PROVIDERS_DOCKER: 'true'
+      TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT: 'false'
+      TRAEFIK_ENTRYPOINTS_WEB_ADDRESS: ':80'
+      TRAEFIK_ENTRYPOINTS_WEB_HTTP_REDIRECTIONS_ENTRYPOINT_TO: 'WEBSECURE'
+      TRAEFIK_ENTRYPOINTS_WEB_HTTP_REDIRECTIONS_ENTRYPOINT_SCHEME: 'https'
+      TRAEFIK_ENTRYPOINTS_WEBSECURE_ADDRESS: ':443'
+      TRAEFIK_CERTIFICATESRESOLVERS_CFRESOLVER_ACME_DNSCHALLENGE: 'true'
+      TRAEFIK_CERTIFICATESRESOLVERS_CFRESOLVER_ACME_DNSCHALLENGE_PROVIDER: 'cloudflare'
+      TRAEFIK_CERTIFICATESRESOLVERS_CFRESOLVER_ACME_EMAIL: '${email}'
+      TRAEFIK_CERTIFICATESRESOLVERS_CFRESOLVER_ACME_STORAGE: '/etc/letsencrypt/acme.json'
+      CF_API_EMAIL: ${cf_api_email}
+      CF_DNS_API_TOKEN: ${cf_dns_api_token}
+
+      # TRAEFIK_PROVIDERS_FILE_DIRECTORY: '/etc/traefik/dynamic_conf'
+    networks:
+      - traefik
+    ports:
+      - 80:80
+      - 443:443
+      - 8080:8080
+    # environment:
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./components/data/certbot/letsencrypt/:/etc/letsencrypt/
+    restart: unless-stopped
+
+  adguard:
+    image: adguard/adguardhome:latest
+    container_name: adguard
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.adguard.tls=true
+      - traefik.http.routers.adguard.rule=HOST(`adguard.${domain}`)
+      - traefik.http.routers.adguard.tls.certresolver=cfresolver
+      - traefik.http.services.adguard.loadbalancer.server.port=3000
+    networks:
+      - traefik
+    ports:
+      - "192.168.1.30:53:53/udp"
+    volumes:
+      - ./components/data/adgaurd/workdir:/opt/adguardhome/work
+      - ./components/data/adgaurd/confdir:/opt/adguardhome/conf
+    restart: unless-stopped
+
+  wireguard:
+    image: lscr.io/linuxserver/wireguard:latest
+    container_name: wireguard
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    networks:
+      - traefik
+    ports:
+      - 51820:51820/udp
+    environment:
+      PUID: 0
+      PGID: 0
+      TZ: America/Boise
+      SERVERURL: ${domain} # optional
+      SERVERPORT: 51820 # optional
+      PEERS: "Eris, Sistine, Maki, Erza" # optional
+      PEERDNS: auto # optional
+      INTERNAL_SUBNET: 192.168.1.0 # optional
+      ALLOWEDIPS: 0.0.0.0/0 # optional
+    volumes:
+      - ./components/data/wireguard/config:/config
+      - ./components/data/wireguard/modules:/lib/modules
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+    restart: unless-stopped
+
+networks:
+  traefik:
+    driver: bridge

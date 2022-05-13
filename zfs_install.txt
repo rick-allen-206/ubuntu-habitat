@@ -1,0 +1,169 @@
+# UPDATE ENVIRONMENT
+apt update
+apt install --yes debootstrap gdisk zfs-initramfs
+systemctl stop zed
+swapoff --all
+
+# CREATE VARRIABLES
+# for i in $(ls -la /dev/disk/by-id | \
+# grep scsi | cut -d " " -f 11 | cut -d ":" -f 1); \
+# do echo DISK$VAL=$i >> .bashrc; VAL=$((VAL+1)); done
+DISK0=/dev/disk/by-id/scsi-36a4badb03f3ab700293075a90b5e321d
+DISK1=/dev/disk/by-id/scsi-36a4badb03f3ab700293076b91b9224db
+DISK2=/dev/disk/by-id/scsi-36a4badb03f3ab700293076e31e0e5355
+DISK3=/dev/disk/by-id/scsi-36a4badb03f3ab7002930771220e2d36e
+DISK4=/dev/disk/by-id/scsi-36a4badb03f3ab7002930775624eb99d5
+DISK5=/dev/disk/by-id/scsi-36a4badb03f3ab7002930778527b44348
+DISK6=/dev/disk/by-id/scsi-36a4badb03f3ab700293077ab2a0318af
+DISK7=/dev/disk/by-id/scsi-36a4badb03f3ab700293077e12d37cb38
+
+# PARTITION CREATION
+sgdisk --zap-all $DISK0
+sgdisk --zap-all $DISK1
+sgdisk --zap-all $DISK2
+sgdisk --zap-all $DISK3
+sgdisk --zap-all $DISK4
+sgdisk --zap-all $DISK5
+sgdisk --zap-all $DISK6
+sgdisk --zap-all $DISK7
+
+sgdisk     -n1:1M:+512M   -t1:EF00 $DISK0
+sgdisk     -n2:0:+10G    -t2:FD00 $DISK0
+sgdisk     -n3:0:+2G      -t3:BE00 $DISK0
+sgdisk     -n4:0:0        -t4:BF00 $DISK0
+ 
+sgdisk     -n1:1M:+512M   -t1:EF00 $DISK1
+sgdisk     -n2:0:+10G    -t2:FD00 $DISK1
+sgdisk     -n3:0:+2G      -t3:BE00 $DISK1
+sgdisk     -n4:0:0        -t4:BF00 $DISK1
+ 
+sgdisk     -n1:1M:+512M   -t1:EF00 $DISK2
+sgdisk     -n2:0:+10G    -t2:FD00 $DISK2
+sgdisk     -n3:0:+2G      -t3:BE00 $DISK2
+sgdisk     -n4:0:0        -t4:BF00 $DISK2
+ 
+sgdisk     -n1:1M:+512M   -t1:EF00 $DISK3
+sgdisk     -n2:0:+10G    -t2:FD00 $DISK3
+sgdisk     -n3:0:+2G      -t3:BE00 $DISK3
+sgdisk     -n4:0:0        -t4:BF00 $DISK3
+ 
+sgdisk     -n1:1M:+512M   -t1:EF00 $DISK4
+sgdisk     -n2:0:+10G    -t2:FD00 $DISK4
+sgdisk     -n3:0:+2G      -t3:BE00 $DISK4
+sgdisk     -n4:0:0        -t4:BF00 $DISK4
+ 
+sgdisk     -n1:1M:+512M   -t1:EF00 $DISK5
+sgdisk     -n2:0:+10G    -t2:FD00 $DISK5
+sgdisk     -n3:0:+2G      -t3:BE00 $DISK5
+sgdisk     -n4:0:0        -t4:BF00 $DISK5
+ 
+sgdisk     -n1:1M:+512M   -t1:EF00 $DISK6
+sgdisk     -n2:0:+10G    -t2:FD00 $DISK6
+sgdisk     -n3:0:+2G      -t3:BE00 $DISK6
+sgdisk     -n4:0:0        -t4:BF00 $DISK6
+ 
+sgdisk     -n1:1M:+512M   -t1:EF00 $DISK7
+sgdisk     -n2:0:+10G    -t2:FD00 $DISK7
+sgdisk     -n3:0:+2G      -t3:BE00 $DISK7
+sgdisk     -n4:0:0        -t4:BF00 $DISK7
+ 
+
+
+# BOOT POOL CREATION
+zpool create \
+    -o cachefile=/etc/zfs/zpool.cache \
+    -o ashift=12 -o autotrim=on -d \
+    -o feature@async_destroy=enabled \
+    -o feature@bookmarks=enabled \
+    -o feature@embedded_data=enabled \
+    -o feature@empty_bpobj=enabled \
+    -o feature@enabled_txg=enabled \
+    -o feature@extensible_dataset=enabled \
+    -o feature@filesystem_limits=enabled \
+    -o feature@hole_birth=enabled \
+    -o feature@large_blocks=enabled \
+    -o feature@lz4_compress=enabled \
+    -o feature@spacemap_histogram=enabled \
+    -O acltype=posixacl -O canmount=off -O compression=lz4 \
+    -O devices=off -O normalization=formD -O relatime=on -O xattr=sa \
+    -O mountpoint=/boot -R /mnt \
+    bpool raidz \
+    ${DISK0}-part3 \
+    ${DISK1}-part3 \
+    ${DISK2}-part3 \
+    ${DISK3}-part3 \
+    ${DISK4}-part3 \
+    ${DISK5}-part3 \
+    ${DISK6}-part3 \
+    ${DISK7}-part3
+
+# ROOT POOL (ENCRYPTED WITH ZFS NATIVE ENCRYPTION)
+zpool create \
+    -o ashift=12 -o autotrim=on \
+    -O encryption=aes-256-gcm \
+    -O keylocation=prompt -O keyformat=passphrase \
+    -O acltype=posixacl -O canmount=off -O compression=lz4 \
+    -O dnodesize=auto -O normalization=formD -O relatime=on \
+    -O xattr=sa -O mountpoint=/ -R /mnt \
+    rpool raidz \
+    ${DISK0}-part4 \
+    ${DISK1}-part4 \
+    ${DISK2}-part4 \
+    ${DISK3}-part4 \
+    ${DISK4}-part4 \
+    ${DISK5}-part4 \
+    ${DISK6}-part4 \
+    ${DISK7}-part4
+
+# Create filesystem datasets to act as containers
+zfs create -o canmount=off -o mountpoint=none rpool/ROOT
+zfs create -o canmount=off -o mountpoint=none bpool/BOOT
+
+# Create filesystem datasets for the root and boot filesystems
+UUID=$(dd if=/dev/urandom bs=1 count=100 2>/dev/null |
+    tr -dc 'a-z0-9' | cut -c-6)
+zfs create -o mountpoint=/ \
+    -o com.ubuntu.zsys:bootfs=yes \
+    -o com.ubuntu.zsys:last-used=$(date +%s) rpool/ROOT/ubuntu_$UUID
+zfs create -o mountpoint=/boot bpool/BOOT/ubuntu_$UUID
+
+# Create datasets
+zfs create -o com.ubuntu.zsys:bootfs=no \
+    rpool/ROOT/ubuntu_$UUID/srv
+zfs create -o com.ubuntu.zsys:bootfs=no -o canmount=off \
+    rpool/ROOT/ubuntu_$UUID/usr
+zfs create rpool/ROOT/ubuntu_$UUID/usr/local
+zfs create -o com.ubuntu.zsys:bootfs=no -o canmount=off \
+    rpool/ROOT/ubuntu_$UUID/var
+zfs create rpool/ROOT/ubuntu_$UUID/var/games
+zfs create rpool/ROOT/ubuntu_$UUID/var/lib
+zfs create rpool/ROOT/ubuntu_$UUID/var/lib/AccountsService
+zfs create rpool/ROOT/ubuntu_$UUID/var/lib/apt
+zfs create rpool/ROOT/ubuntu_$UUID/var/lib/dpkg
+zfs create rpool/ROOT/ubuntu_$UUID/var/lib/NetworkManager
+zfs create rpool/ROOT/ubuntu_$UUID/var/log
+zfs create rpool/ROOT/ubuntu_$UUID/var/mail
+zfs create rpool/ROOT/ubuntu_$UUID/var/snap
+zfs create rpool/ROOT/ubuntu_$UUID/var/spool
+zfs create rpool/ROOT/ubuntu_$UUID/var/www
+
+zfs create -o canmount=off -o mountpoint=/ \
+    rpool/USERDATA
+zfs create -o com.ubuntu.zsys:bootfs-datasets=rpool/ROOT/ubuntu_$UUID \
+    -o canmount=on -o mountpoint=/root \
+    rpool/USERDATA/root_$UUID
+chmod 700 /mnt/root
+zfs create -o com.ubuntu.zsys:bootfs=no bpool/grub
+
+# Mount tmpfs at /run
+mkdir /mnt/run
+mount -t tmpfs tmpfs /mnt/run
+mkdir /mnt/run/lock
+
+# Install the minimal system
+debootstrap focal /mnt
+
+# Copy in zpool.cache
+mkdir /mnt/etc/zfs
+cp /etc/zfs/zpool.cache /mnt/etc/zfs/
+

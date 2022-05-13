@@ -1,0 +1,4 @@
+/components/data
+/components/config
+/secrets
+.env
