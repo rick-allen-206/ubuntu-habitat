@@ -159,6 +159,7 @@ services:
       - traefik
     ports:
       - '9091:9091'
+      - '51413:51413'
     environment:
       OPENVPN_PROVIDER: EXPRESSVPN
       OPENVPN_CONFIG: ${openvpn_config}

@@ -32,8 +32,8 @@ Run the following command to set up let's encrypt for pterodactyl:
 
 ```dockerfile
 sudo docker run -it --rm --name certbot \
-  -v "/opt/ubuntu-habitat/components/data/certbot/letsencrypt/:/etc/letsencrypt/" \
-  -v "/opt/ubuntu-habitat/secrets/cloudflare.ini:/tmp/cloudflare.ini" \
+  -v "/media/components/data/certbot/letsencrypt/:/etc/letsencrypt/" \
+  -v "/media/secrets/cloudflare.ini:/tmp/cloudflare.ini" \
   certbot/dns-cloudflare certonly \
   --dns-cloudflare \
   --dns-cloudflare-credentials /tmp/cloudflare.ini \
