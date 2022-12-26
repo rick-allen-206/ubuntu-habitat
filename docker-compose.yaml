@@ -240,7 +240,7 @@ services:
       MAIL_ENCRYPTION: "true"
       # Uncomment the line below and set to a non-empty value if you want to use Let's Encrypt
       # to generate an SSL certificate for the Panel.
-      LE_EMAIL: "${ptero_mail_from}"
+      LE_EMAIL: "${default_email}"
       DB_PASSWORD: ${ptero_database_password}
       APP_ENV: "production"
       APP_ENVIRONMENT_ONLY: "false"
@@ -438,7 +438,7 @@ services:
       TRAEFIK_ENTRYPOINTS_WEB_HTTP_REDIRECTIONS_ENTRYPOINT_SCHEME: 'https'
       TRAEFIK_CERTIFICATESRESOLVERS_CFRESOLVER_ACME_DNSCHALLENGE: 'true'
       TRAEFIK_CERTIFICATESRESOLVERS_CFRESOLVER_ACME_DNSCHALLENGE_PROVIDER: 'cloudflare'
-      TRAEFIK_CERTIFICATESRESOLVERS_CFRESOLVER_ACME_EMAIL: '${email}'
+      TRAEFIK_CERTIFICATESRESOLVERS_CFRESOLVER_ACME_EMAIL: '${default_email}'
       TRAEFIK_CERTIFICATESRESOLVERS_CFRESOLVER_ACME_STORAGE: '/etc/letsencrypt/acme.json'
       CF_API_EMAIL: ${cf_api_email}
       CF_DNS_API_TOKEN: ${cf_dns_api_token}
