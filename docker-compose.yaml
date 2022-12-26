@@ -28,7 +28,7 @@ services:
       PLEX_CLAIM: ${plex_claim}
       TZ: America/Boise
     volumes:
-      - /media/data/plex:/config
+      - /media/components/data/plex:/config
       - /media/tv/:/tv
       - /media/movies:/movies
       - /media/anime:/anime
