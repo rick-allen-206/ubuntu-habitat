@@ -240,7 +240,7 @@ services:
       MAIL_ENCRYPTION: "true"
       # Uncomment the line below and set to a non-empty value if you want to use Let's Encrypt
       # to generate an SSL certificate for the Panel.
-      LE_EMAIL: "${email}"
+      LE_EMAIL: "${ptero_mail_from}"
       DB_PASSWORD: ${ptero_database_password}
       APP_ENV: "production"
       APP_ENVIRONMENT_ONLY: "false"
