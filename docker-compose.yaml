@@ -12,23 +12,23 @@ services:
       - traefik
     ports:
       - 32400:32400
-      # - 1900:1900
-      # - 3005:3005
-      # - 5353:5353
-      # - 8324:8324
-      # - 32410:32410
-      # - 32412:32412
-      # - 32413:32413
-      # - 32414:32414
-      # - 32469:32469
+      - 1900:1900
+      - 3005:3005
+      - 5353:5353
+      - 8324:8324
+      - 32410:32410
+      - 32412:32412
+      - 32413:32413
+      - 32414:32414
+      - 32469:32469
     environment:
       PUID: 0
       PGID: 0
       VERSION: docker
-      PLEX_CLAIM: ${plex_claim_sec}
+      PLEX_CLAIM: ${plex_claim}
       TZ: America/Boise
     volumes:
-      - ./components/data/plex:/config
+      - /media/data/plex:/config
       - /media/tv/:/tv
       - /media/movies:/movies
       - /media/anime:/anime
@@ -40,9 +40,9 @@ services:
       container_name: tautulli
       labels:
         - traefik.enable=true
-        - traefik.http.routers.tautulli.tls=true
+        # - traefik.http.routers.tautulli.tls=true
         - traefik.http.routers.tautulli.rule=HOST(`tautulli.${domain}`)
-        - traefik.http.routers.tautulli.tls.certresolver=cfresolver
+        # - traefik.http.routers.tautulli.tls.certresolver=cfresolver
         - traefik.http.services.tautulli.loadbalancer.server.port=8181
       networks:
         - traefik
@@ -51,7 +51,7 @@ services:
         # - PGID=1000
         - TZ=America/Boise
       volumes:
-        - ./components/data/tautulli:/config
+        - /media/components/data/tautulli:/config
       restart: unless-stopped
 
   radarr:
@@ -73,7 +73,7 @@ services:
       - /media/movies:/movies
       - /media/anime_movies:/anime_movies
       - /media/downloads:/data/completed
-      - ./components/data/radarr/config:/config
+      - /media/components/data/radarr/config:/config
     restart: unless-stopped
 
   sonarr:
@@ -95,7 +95,28 @@ services:
       - /media/tv:/tv
       - /media/anime:/anime
       - /media/downloads:/data/completed
-      - ./components/data/sonarr/config:/config
+      - /media/components/data/sonarr/config:/config
+    restart: unless-stopped
+
+  readarr:
+    image: lscr.io/linuxserver/readarr:develop
+    container_name: readarr
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.readarr.tls=true
+      - traefik.http.routers.readarr.rule=HOST(`readarr.${domain}`)
+      - traefik.http.routers.readarr.tls.certresolver=cfresolver
+      - traefik.http.services.readarr.loadbalancer.server.port=8787
+    networks:
+      - traefik
+    environment:
+      PUID: 0
+      PGID: 0
+      TZ: America/Boise
+    volumes:
+      - /media/books:/books
+      - /media/downloads:/downloads
+      - /media/components/data/readarr/config:/config
     restart: unless-stopped
 
   jackett:
@@ -117,7 +138,7 @@ services:
       # - RUN_OPTS=<run options here> #optional
     volumes:
       - /media/downloads:/downloads
-      - ./components/data/jackett/config:/config
+      - /media/components/data/jackett/config:/config
     restart: unless-stopped
 
   transmission:
@@ -141,12 +162,13 @@ services:
     environment:
       OPENVPN_PROVIDER: EXPRESSVPN
       OPENVPN_CONFIG: ${openvpn_config}
-      OPENVPN_USERNAME: ${openvpn_username_sec}
-      OPENVPN_PASSWORD: ${openvpn_password_sec}
+      OPENVPN_USERNAME: ${openvpn_username}
+      OPENVPN_PASSWORD: ${openvpn_password}
       LOCAL_NETWORK: ${openvpn_local_network}
     volumes:
       - /media/downloads:/data/completed
-      - ./components/data/transmission:/data
+      - /media/components/data/transmission:/data
+      - /media/components/config/transmission/settings.json:/data/transmission-home/settings.json
     restart: unless-stopped
 
   ombi:
@@ -166,7 +188,7 @@ services:
       TZ: America/Boise
       BASE_URL: '/ombi' #optional
     volumes:
-      - ./components/data/ombi/config:/config
+      - /media/components/data/ombi/config:/config
     restart: unless-stopped
 
   ptero-database:
@@ -181,7 +203,7 @@ services:
       MYSQL_USER: pterodactyl
       MYSQL_PASSWORD: ${ptero_database_password}
     volumes:
-      - "./components/data/pterodactyl/database:/var/lib/mysql"
+      - "/media/components/data/pterodactyl/database:/var/lib/mysql"
     restart: always
   
   ptero-cache:
@@ -200,7 +222,7 @@ services:
       - traefik.tcp.routers.ptero-panel.tls.passthrough=true
       - traefik.tcp.routers.ptero-panel.service=ptero-panel
       - traefik.tcp.services.ptero-panel.loadbalancer.server.port=443
-      - traefik.tcp.routers.ptero-panel.entrypoints=websecure
+    #   - traefik.tcp.routers.ptero-panel.entrypoints=websecure
     # ports:
     #   - 443:443
     networks:
@@ -208,8 +230,8 @@ services:
     environment:
       APP_URL: "https://ptero-panel.${domain}"
       APP_TIMEZONE: "America/Boise"
-      APP_SERVICE_AUTHOR: "${email}"
-      MAIL_FROM: "${email}"
+      APP_SERVICE_AUTHOR: "${ptero_mail_from}"
+      MAIL_FROM: "${ptero_mail_from}"
       MAIL_DRIVER: "smtp"
       MAIL_HOST: "smtp.gmail.com"
       MAIL_PORT: "587"
@@ -229,10 +251,10 @@ services:
       DB_HOST: ptero-database
       DB_PORT: "3306"
     volumes:
-      - "./components/config/pterodactyl/var/:/app/var/"
-      - "./components/config/pterodactyl/nginx/:/etc/nginx/http.d/"
-      - "./components/data/certbot/letsencrypt/:/etc/letsencrypt/"
-      - "./components/data/pterodactyl/logs/:/app/storage/logs"
+      - "/media/components/config/pterodactyl/var/:/app/var/"
+      - "/media/components/config/pterodactyl/nginx/:/etc/nginx/http.d/"
+      - "/media/components/data/certbot/letsencrypt/:/etc/letsencrypt/"
+      - "/media/components/data/pterodactyl/logs/:/app/storage/logs"
     restart: always
   
   ##########################################
@@ -273,7 +295,6 @@ services:
       environment:
         - API_KEY=${cf_dns_api_token}
         - ZONE=${domain}
-        - SUBDOMAIN=ombi
         - SUBDOMAIN=ptero-node-1
         - PROXIED=false
   
@@ -285,7 +306,7 @@ services:
         - API_KEY=${cf_dns_api_token}
         - ZONE=${domain}
         - SUBDOMAIN=ombi
-        - PROXIED=true
+        - PROXIED=false
 
   heimdall:
     image: lscr.io/linuxserver/heimdall
@@ -304,7 +325,7 @@ services:
       PGID: 1000
       TZ: America/Boise
     volumes:
-      - ./components/data/heimdall/config:/config
+      - /media/components/data/heimdall/config:/config
     restart: unless-stopped
 
   glances:
@@ -330,7 +351,7 @@ services:
       - 'GLANCES_OPT=--export influxdb2 -q'
     pid: host
     volumes:
-      - ./components/config/glances:/etc/glances
+      - /media/components/config/glances:/etc/glances
       - /var/run/docker.sock:/var/run/docker.sock
     restart: unless-stopped
 
@@ -359,7 +380,7 @@ services:
           has been updated{{ end }} on {{ .Entry.Image.Domain }} registry (triggered by {{ .Meta.Hostname }} host).
       TZ: America/Boise
     volumes:
-      - ./components/data/diun:/data
+      - /media/components/data/diun:/data
       - /var/run/docker.sock:/var/run/docker.sock
     restart: unless-stopped
 
@@ -376,14 +397,14 @@ services:
       - traefik
     environment:
       DOCKER_INFLUXDB_INIT_MODE: setup
-      DOCKER_INFLUXDB_INIT_USERNAME: ${influxdb_username_sec}
-      DOCKER_INFLUXDB_INIT_PASSWORD: ${influxdb_password_sec}
+      DOCKER_INFLUXDB_INIT_USERNAME: ${influxdb_username}
+      DOCKER_INFLUXDB_INIT_PASSWORD: ${influxdb_password}
       DOCKER_INFLUXDB_INIT_ORG: TheBasement
       DOCKER_INFLUXDB_INIT_BUCKET: default
-      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${influxdb_admintoken_sec}
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${influxdb_admintoken}
     volumes:
-      - ./components/data/influxdb2/config:/etc/influxdb2
-      - ./components/data/influxdb2:/var/lib/influxdb2
+      - /media/components/data/influxdb2/config:/etc/influxdb2
+      - /media/components/data/influxdb2:/var/lib/influxdb2
     restart: unless-stopped
 
   grafana:
@@ -399,7 +420,7 @@ services:
       - traefik
     user: '0'
     volumes:
-      - ./components/data/grafana:/var/lib/grafana
+      - /media/components/data/grafana:/var/lib/grafana
     restart: unless-stopped
 
   traefik:
@@ -412,9 +433,9 @@ services:
       TRAEFIK_PROVIDERS_DOCKER: 'true'
       TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT: 'false'
       TRAEFIK_ENTRYPOINTS_WEB_ADDRESS: ':80'
+      TRAEFIK_ENTRYPOINTS_WEBSECURE_ADDRESS: ':443'
       TRAEFIK_ENTRYPOINTS_WEB_HTTP_REDIRECTIONS_ENTRYPOINT_TO: 'WEBSECURE'
       TRAEFIK_ENTRYPOINTS_WEB_HTTP_REDIRECTIONS_ENTRYPOINT_SCHEME: 'https'
-      TRAEFIK_ENTRYPOINTS_WEBSECURE_ADDRESS: ':443'
       TRAEFIK_CERTIFICATESRESOLVERS_CFRESOLVER_ACME_DNSCHALLENGE: 'true'
       TRAEFIK_CERTIFICATESRESOLVERS_CFRESOLVER_ACME_DNSCHALLENGE_PROVIDER: 'cloudflare'
       TRAEFIK_CERTIFICATESRESOLVERS_CFRESOLVER_ACME_EMAIL: '${email}'
@@ -432,7 +453,7 @@ services:
     # environment:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./components/data/certbot/letsencrypt/:/etc/letsencrypt/
+      - /media/components/data/certbot/letsencrypt/:/etc/letsencrypt/
     restart: unless-stopped
 
   adguard:
@@ -449,8 +470,8 @@ services:
     ports:
       - "192.168.1.30:53:53/udp"
     volumes:
-      - ./components/data/adgaurd/workdir:/opt/adguardhome/work
-      - ./components/data/adgaurd/confdir:/opt/adguardhome/conf
+      - /media/components/data/adgaurd/workdir:/opt/adguardhome/work
+      - /media/components/data/adgaurd/confdir:/opt/adguardhome/conf
     restart: unless-stopped
 
   wireguard:
@@ -474,8 +495,8 @@ services:
       INTERNAL_SUBNET: 192.168.1.0 # optional
       ALLOWEDIPS: 0.0.0.0/0 # optional
     volumes:
-      - ./components/data/wireguard/config:/config
-      - ./components/data/wireguard/modules:/lib/modules
+      - /media/components/data/wireguard/config:/config
+      - /media/components/data/wireguard/modules:/lib/modules
     sysctls:
       - net.ipv4.conf.all.src_valid_mark=1
     restart: unless-stopped

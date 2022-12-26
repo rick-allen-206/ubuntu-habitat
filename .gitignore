@@ -1,4 +1,4 @@
-/components/data
-/components/config
+/components/data/*
+/components/config/*
 /secrets
 .env
