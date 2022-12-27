@@ -8,6 +8,7 @@ services:
   plex:
     image: linuxserver/plex:latest
     container_name: plex
+    hostname: plex
     networks:
       - traefik
     ports:
@@ -38,6 +39,7 @@ services:
   tautulli:
       image: lscr.io/linuxserver/tautulli
       container_name: tautulli
+      hostname: tautulli
       labels:
         - traefik.enable=true
         # - traefik.http.routers.tautulli.tls=true
@@ -57,6 +59,7 @@ services:
   radarr:
     image: lscr.io/linuxserver/radarr
     container_name: radarr
+    hostname: radarr
     labels:
       - traefik.enable=true
       - traefik.http.routers.radarr.tls=true
@@ -79,6 +82,7 @@ services:
   sonarr:
     image: lscr.io/linuxserver/sonarr
     container_name: sonarr
+    hostname: sonarr
     labels:
       - traefik.enable=true
       - traefik.http.routers.sonarr.tls=true
@@ -101,6 +105,7 @@ services:
   readarr:
     image: lscr.io/linuxserver/readarr:develop
     container_name: readarr
+    hostname: readarr
     labels:
       - traefik.enable=true
       - traefik.http.routers.readarr.tls=true
@@ -122,6 +127,7 @@ services:
   jackett:
     image: lscr.io/linuxserver/jackett
     container_name: jackett
+    hostname: jackett
     labels:
       - traefik.enable=true
       - traefik.http.routers.jackett.tls=true
@@ -144,6 +150,7 @@ services:
   transmission:
     image: haugene/transmission-openvpn
     container_name: transmission
+    hostname: transmission
     # labels:
     #   - traefik.enable=true
     #   - traefik.http.routers.transmission.tls=true
@@ -175,6 +182,7 @@ services:
   ombi:
     image: linuxserver/ombi:latest
     container_name: ombi
+    hostname: ombi
     labels:
       - traefik.enable=true
       - traefik.http.routers.ombi.tls=true
@@ -195,6 +203,7 @@ services:
   ptero-database:
     image: mariadb:10.5
     container_name: ptero-database
+    hostname: ptero-database
     command: --default-authentication-plugin=mysql_native_password
     networks:
       - traefik
@@ -210,6 +219,7 @@ services:
   ptero-cache:
     image: redis:alpine
     container_name: ptero-cache
+    hostname: ptero-cache
     networks:
       - traefik
     restart: always
@@ -217,6 +227,7 @@ services:
   ptero-panel:
     image: ghcr.io/pterodactyl/panel:latest
     container_name: ptero-panel
+    hostname: ptero-panel
     labels:
       - traefik.enable=true
       - traefik.tcp.routers.ptero-panel.rule=HostSNI(`ptero-panel.${domain}`)
@@ -265,6 +276,7 @@ services:
   cloudflare-ddns-root:
     image: oznu/cloudflare-ddns:latest
     container_name: cloudflare-ddns-root
+    hostname: cloudflare-ddns-root
     restart: always
     environment:
       - API_KEY=${cf_dns_api_token}
@@ -273,6 +285,7 @@ services:
   cloudflare-ddns-www:
     image: oznu/cloudflare-ddns:latest
     container_name: cloudflare-ddns-www
+    hostname: cloudflare-ddns-www
     restart: always
     environment:
       - API_KEY=${cf_dns_api_token}
@@ -280,38 +293,42 @@ services:
       - SUBDOMAIN=www
       - PROXIED=false
   cloudflare-ddns-pteropanel:
-      image: oznu/cloudflare-ddns:latest
-      container_name: cloudflare-ddns-pteropanel
-      restart: always
-      environment:
-        - API_KEY=${cf_dns_api_token}
-        - ZONE=${domain}
-        - SUBDOMAIN=ptero-panel
-        - PROXIED=false
+    image: oznu/cloudflare-ddns:latest
+    container_name: cloudflare-ddns-pteropanel
+    hostname: cloudflare-ddns-pteropanel
+    restart: always
+    environment:
+      - API_KEY=${cf_dns_api_token}
+      - ZONE=${domain}
+      - SUBDOMAIN=ptero-panel
+      - PROXIED=false
   
   cloudflare-ddns-pteronode:
-      image: oznu/cloudflare-ddns:latest
-      container_name: cloudflare-ddns-pteronode
-      restart: always
-      environment:
-        - API_KEY=${cf_dns_api_token}
-        - ZONE=${domain}
-        - SUBDOMAIN=ptero-node-1
-        - PROXIED=false
+    image: oznu/cloudflare-ddns:latest
+    container_name: cloudflare-ddns-pteronode
+    hostname: cloudflare-ddns-pteronode
+    restart: always
+    environment:
+      - API_KEY=${cf_dns_api_token}
+      - ZONE=${domain}
+      - SUBDOMAIN=ptero-node-1
+      - PROXIED=false
   
   cloudflare-ddns-ombi:
-      image: oznu/cloudflare-ddns:latest
-      container_name: cloudflare-ddns-ombi
-      restart: always
-      environment:
-        - API_KEY=${cf_dns_api_token}
-        - ZONE=${domain}
-        - SUBDOMAIN=ombi
-        - PROXIED=false
+    image: oznu/cloudflare-ddns:latest
+    container_name: cloudflare-ddns-ombi
+    hostname: cloudflare-ddns-ombi
+    restart: always
+    environment:
+      - API_KEY=${cf_dns_api_token}
+      - ZONE=${domain}
+      - SUBDOMAIN=ombi
+      - PROXIED=false
 
   heimdall:
     image: lscr.io/linuxserver/heimdall
     container_name: heimdall
+    hostname: heimdall
     labels:
       - traefik.enable=true
       - traefik.http.routers.heimdall.tls=true
@@ -332,6 +349,7 @@ services:
   glances:
     image: nicolargo/glances:latest-full
     container_name: glances
+    hostname: glances
     labels:
       - traefik.enable=true
 
@@ -359,6 +377,7 @@ services:
   diun:
     image: crazymax/diun:latest
     container_name: diun
+    hostname: diun
     command: serve
     labels:
       - diun.enable=true
@@ -388,6 +407,7 @@ services:
   influxdb:
     image: influxdb:latest
     container_name: influxdb
+    hostname: influxdb
     labels:
       - traefik.enable=true
       - traefik.http.routers.influxdb.tls=true
@@ -411,6 +431,7 @@ services:
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
+    hostname: grafana
     labels:
       - traefik.enable=true
       - traefik.http.routers.grafana.tls=true
@@ -427,6 +448,7 @@ services:
   traefik:
     image: traefik:latest
     container_name: traefik
+    hostname: traefik
     environment:
       TRAEFIK_API: 'true'
       TRAEFIK_API_INSECURE: 'true'
@@ -461,6 +483,7 @@ services:
   adguard:
     image: adguard/adguardhome:latest
     container_name: adguard
+    hostname: adguard
     labels:
       - traefik.enable=true
       - traefik.http.routers.adguard.tls=true
@@ -479,6 +502,7 @@ services:
   wireguard:
     image: lscr.io/linuxserver/wireguard:latest
     container_name: wireguard
+    hostname: wireguard
     cap_add:
       - NET_ADMIN
       - SYS_MODULE
