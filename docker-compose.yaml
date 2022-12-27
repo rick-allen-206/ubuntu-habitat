@@ -115,7 +115,7 @@ services:
       TZ: America/Boise
     volumes:
       - /media/books:/books
-      - /media/downloads:/downloads
+      - /media/downloads:/data/completed
       - /media/components/data/readarr/config:/config
     restart: unless-stopped
 
