@@ -9,6 +9,9 @@ services:
     image: linuxserver/plex:latest
     container_name: plex
     hostname: plex
+    labels:
+      - diun.enable=true
+      - diun.watch_repo=true
     networks:
       - traefik
     ports:
