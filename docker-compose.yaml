@@ -61,6 +61,8 @@ services:
     container_name: radarr
     hostname: radarr
     labels:
+      - diun.enable=true
+      - diun.watch_repo=true
       - traefik.enable=true
       - traefik.http.routers.radarr.tls=true
       - traefik.http.routers.radarr.rule=HOST(`radarr.${domain}`)
@@ -84,6 +86,8 @@ services:
     container_name: sonarr
     hostname: sonarr
     labels:
+      - diun.enable=true
+      - diun.watch_repo=true
       - traefik.enable=true
       - traefik.http.routers.sonarr.tls=true
       - traefik.http.routers.sonarr.rule=HOST(`sonarr.${domain}`)
@@ -107,6 +111,8 @@ services:
     container_name: readarr
     hostname: readarr
     labels:
+      - diun.enable=true
+      - diun.watch_repo=true
       - traefik.enable=true
       - traefik.http.routers.readarr.tls=true
       - traefik.http.routers.readarr.rule=HOST(`readarr.${domain}`)
@@ -129,6 +135,8 @@ services:
     container_name: jackett
     hostname: jackett
     labels:
+      - diun.enable=true
+      - diun.watch_repo=true
       - traefik.enable=true
       - traefik.http.routers.jackett.tls=true
       - traefik.http.routers.jackett.rule=HOST(`jackett.${domain}`)
@@ -151,7 +159,9 @@ services:
     image: haugene/transmission-openvpn
     container_name: transmission
     hostname: transmission
-    # labels:
+    labels:
+      - diun.enable=true
+      - diun.watch_repo=true
     #   - traefik.enable=true
     #   - traefik.http.routers.transmission.tls=true
     #   - traefik.http.routers.transmission.rule=HOST(`transmission.${domain}`)
@@ -184,6 +194,8 @@ services:
     container_name: ombi
     hostname: ombi
     labels:
+      - diun.enable=true
+      - diun.watch_repo=true
       - traefik.enable=true
       - traefik.http.routers.ombi.tls=true
       - traefik.http.routers.ombi.rule=HOST(`ombi.${domain}`)
@@ -330,6 +342,8 @@ services:
     container_name: heimdall
     hostname: heimdall
     labels:
+      - diun.enable=true
+      - diun.watch_repo=true
       - traefik.enable=true
       - traefik.http.routers.heimdall.tls=true
       - traefik.http.routers.heimdall.tls.certresolver=cfresolver
@@ -351,6 +365,9 @@ services:
     container_name: glances
     hostname: glances
     labels:
+      - diun.enable=true
+      - diun.watch_repo=true
+
       - traefik.enable=true
 
       - traefik.http.routers.glances-web.tls=true
@@ -379,9 +396,9 @@ services:
     container_name: diun
     hostname: diun
     command: serve
-    labels:
-      - diun.enable=true
-      - diun.watch_repo=true
+    # labels:
+    #   - diun.enable=true
+    #   - diun.watch_repo=true
     networks:
       - traefik
     environment:
@@ -485,6 +502,8 @@ services:
     container_name: adguard
     hostname: adguard
     labels:
+      - diun.enable=true
+      - diun.watch_repo=true
       - traefik.enable=true
       - traefik.http.routers.adguard.tls=true
       - traefik.http.routers.adguard.rule=HOST(`adguard.${domain}`)
@@ -503,6 +522,9 @@ services:
     image: lscr.io/linuxserver/wireguard:latest
     container_name: wireguard
     hostname: wireguard
+    labels:
+      - diun.enable=true
+      - diun.watch_repo=true
     cap_add:
       - NET_ADMIN
       - SYS_MODULE
