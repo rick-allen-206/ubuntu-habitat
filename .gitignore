@@ -1,4 +1,5 @@
 /components/data/*
 /components/config/*
 /secrets
+docker-compose.yaml
 .env

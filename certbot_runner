@@ -1,7 +1,0 @@
-sudo docker run -it --rm --name certbot \
-  -v "/opt/ubuntu-habitat/components/data/certbot/letsencrypt/:/etc/letsencrypt/" \
-  -v "/opt/ubuntu-habitat/secrets/cloudflare.ini:/tmp/cloudflare.ini" \
-  certbot/dns-cloudflare certonly \
-  --dns-cloudflare \
-  --dns-cloudflare-credentials /tmp/cloudflare.ini \
-  -d ptero-panel.example.com 
